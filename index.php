@@ -15,9 +15,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $alert_type = 'danger';
         }
     }
-    
+
     if (isset($_POST['register'])) {
-        $result = register_user($_POST['reg_username'], $_POST['reg_email'], $_POST['reg_password'], $_POST['full_name']);
+        $role = isset($_POST['role']) ? $_POST['role'] : 'user';
+        $admin_code = isset($_POST['admin_code']) ? $_POST['admin_code'] : '';
+
+        $result = register_user(
+            $_POST['reg_username'],
+            $_POST['reg_email'],
+            $_POST['reg_password'],
+            $_POST['full_name'],
+            $role,
+            $admin_code
+        );
+
         $message = $result['message'];
         $alert_type = $result['success'] ? 'success' : 'danger';
     }
@@ -66,7 +77,7 @@ if (is_logged_in()) {
         .form-section.active {
             display: block;
         }
-        .form-control:focus {
+        .form-control:focus, .form-select:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
@@ -93,13 +104,13 @@ if (is_logged_in()) {
                 <h1>📚 Library Management System</h1>
                 <p class="mb-0">Manage your books efficiently</p>
             </div>
-            
+
             <?php if ($message): ?>
                 <div class="alert alert-<?php echo $alert_type; ?> m-3" role="alert">
-                    <?php echo $message; ?>
+                    <?php echo htmlspecialchars($message); ?>
                 </div>
             <?php endif; ?>
-            
+
             <!-- Login Form -->
             <div class="form-section active" id="loginForm">
                 <h3 class="mb-4">Login</h3>
@@ -116,7 +127,7 @@ if (is_logged_in()) {
                 </form>
                 <p class="text-center">Don't have an account? <span class="toggle-form" onclick="toggleForms()">Register here</span></p>
             </div>
-            
+
             <!-- Register Form -->
             <div class="form-section" id="registerForm">
                 <h3 class="mb-4">Create Account</h3>
@@ -137,6 +148,23 @@ if (is_logged_in()) {
                         <label for="reg_password" class="form-label">Password</label>
                         <input type="password" class="form-control" id="reg_password" name="reg_password" required>
                     </div>
+
+                    <!-- Role selection (keeps same style) -->
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <select class="form-select" id="role" name="role" required onchange="toggleAdminCode()">
+                            <option value="user" selected>User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+
+                    <!-- Admin code (only shown when Admin selected) -->
+                    <div class="mb-3" id="adminCodeBox" style="display:none;">
+                        <label for="admin_code" class="form-label">Admin Registration Code</label>
+                        <input type="password" class="form-control" id="admin_code" name="admin_code" placeholder="Enter admin code">
+                        <div class="form-text">Admin role requires a code. Ask the system owner.</div>
+                    </div>
+
                     <button type="submit" name="register" class="btn btn-primary w-100 mb-3">Register</button>
                 </form>
                 <p class="text-center">Already have an account? <span class="toggle-form" onclick="toggleForms()">Login here</span></p>
@@ -148,6 +176,12 @@ if (is_logged_in()) {
         function toggleForms() {
             document.getElementById('loginForm').classList.toggle('active');
             document.getElementById('registerForm').classList.toggle('active');
+        }
+
+        function toggleAdminCode() {
+            const role = document.getElementById('role').value;
+            const box = document.getElementById('adminCodeBox');
+            box.style.display = (role === 'admin') ? 'block' : 'none';
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
